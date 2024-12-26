@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Библиографическая ссылка</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <script>
+        function copyToClipboard() {
+            const copyText = document.getElementById("reference-output");
+            navigator.clipboard.writeText(copyText.textContent).then(() => {
+                alert("Ссылка скопирована в буфер обмена!");
+            });
+        }
+    </script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Генератор библиографических ссылок</h1>
+            <nav>
+                <a href="/form/printed" class="nav-link">Печатный источник</a> |
+                <a href="/form/electronic" class="nav-link">Электронный источник</a>
+            </nav>
+        </header>
+
+<main>
+    {% if fields %}
+    <form method="POST" action="{{ url_for('submit') }}" class="form-card">
+        <input type="hidden" name="form_type" value="{{ form_type }}">
+
+        <!-- Блок для авторов -->
+        <div class="form-group">
+            <label>Авторы:</label>
+            <div id="authors-container">
+                <div class="author-group">
+                    <input type="text" name="authors_surname[]" placeholder="Фамилия" required>
+                    <input type="text" name="authors_name[]" placeholder="Имя" required>
+                    <input type="text" name="authors_patronymic[]" placeholder="Отчество">
+                </div>
+            </div>
+            <button type="button" onclick="addAuthor()" class="btn btn-small">+</button>
+        </div>
+
+        <!-- Остальные поля формы -->
+        {% for field in fields %}
+            {% if field.name != 'authors' %}
+            <div class="form-group">
+                <label>{{ field.label }}</label>
+                <input type="{{ field.type if field.type else 'text' }}" name="{{ field.name }}"
+                       {% if field.required %} required {% endif %}
+                       {% if field.name == 'access_date' %} value="{{ access_date }}" {% endif %}>
+            </div>
+            {% endif %}
+        {% endfor %}
+
+        <button type="submit" class="btn">Сгенерировать ссылку</button>
+    </form>
+    {% else %}
+    <p class="info-message">Выберите форму для заполнения.</p>
+    {% endif %}
+
+    {% if reference %}
+    <div class="result-card">
+        <h3>Сгенерированная ссылка:</h3>
+        <p id="reference-output">{{ reference }}</p>
+        <button onclick="copyToClipboard()" class="btn btn-copy">Скопировать</button>
+    </div>
+    {% endif %}
+</main>
+
+<script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const dateInput = document.querySelector('input[name="access_date"]');
+            if (dateInput) {
+                const today = new Date();
+                const dd = String(today.getDate()).padStart(2, '0'); // День
+                const mm = String(today.getMonth() + 1).padStart(2, '0'); // Месяц (январь - 0)
+                const yyyy = today.getFullYear(); // Год
+
+                // Устанавливаем значение в формате YYYY-MM-DD
+                dateInput.value = `${yyyy}-${mm}-${dd}`;
+            }
+        });
+    function addAuthor() {
+        const container = document.getElementById('authors-container');
+        const newAuthorGroup = document.createElement('div');
+        newAuthorGroup.className = 'author-group';
+        newAuthorGroup.innerHTML = `
+            <input type="text" name="authors_surname[]" placeholder="Фамилия" required>
+            <input type="text" name="authors_name[]" placeholder="Имя" required>
+            <input type="text" name="authors_patronymic[]" placeholder="Отчество">
+        `;
+        container.appendChild(newAuthorGroup);
+    }
+</script>
+
+
+    </div>
+</body>
+</html>
