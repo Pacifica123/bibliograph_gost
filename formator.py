@@ -23,9 +23,9 @@ def format_authors(authors):
         # Форматируем имя автора
         if last_name and first_name:
             if middle_name:
-                formatted_authors.append(f"{last_name} {first_name[0]}. {middle_name[0]}.")
+                formatted_authors.append(f"{last_name}, {first_name[0]}. {middle_name[0]}. ")
             else:
-                formatted_authors.append(f"{last_name} {first_name[0]}.")
+                formatted_authors.append(f"{last_name}, {first_name}. {middle_name} ")
 
     # Форматирование списка авторов
     if len(formatted_authors) == 1:
@@ -35,7 +35,7 @@ def format_authors(authors):
     elif len(formatted_authors) == 3:
         return f"{formatted_authors[0]}, {formatted_authors[1]}, {formatted_authors[2]}"
     else:
-        return f"{formatted_authors[0]} и др."
+        return formatted_authors
 
 
 
@@ -87,10 +87,19 @@ def format_electronic_reference(data):
 
     reference = ""
 
-    if authors:
+    if len(data.get("authors", [])) <= 3 and authors:
         reference += f"{authors} "
+        reference += f"{title} // {website}."
 
-    reference += f"{title} // {website}."
+
+    if len(data.get("authors", [])) > 3 and authors:
+        reference += f"{title} "
+        # Формируем список авторов после названия через '/'
+        reference += f" / {', '.join(authors)} // {website}."
+
+
+
+
 
     if publication_year:
         reference += f" {publication_year}."
