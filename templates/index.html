@@ -2,99 +2,259 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Библиографическая ссылка</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
-    <script>
-        function copyToClipboard() {
-            const copyText = document.getElementById("reference-output");
-            navigator.clipboard.writeText(copyText.textContent).then(() => {
-                alert("Ссылка скопирована в буфер обмена!");
-            });
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Библиографическая ссылка по ГОСТу</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f8f5fa;
+            color: #4a235a;
+            margin: 0;
+            padding: 0;
+            text-align: center; /* Центрирует текст внутри label */
+           /*  margin: 10px auto; Добавляет отступы сверху и снизу */
         }
-    </script>
+        header {
+            background-color: #6c3483;
+            color: #fff;
+            padding: 10px;
+            text-align: center;
+        }
+        header button {
+            background-color: #af7ac5;
+            border: none;
+            color: #fff;
+            padding: 10px 20px;
+            margin: 0 auto
+            cursor: pointer;
+            border-radius: 5px;
+
+        }
+        header button:hover {
+            background-color: #d2b4de;
+        }
+        label {
+            text-align: center;
+            margin: 10px auto
+        }
+        .hidden {
+            display: none;
+        }
+        h2, h3 {
+            color: #4a235a;
+            margin: 10px auto;
+            text-align: center;
+        }
+        form {
+            background-color: #e8daef;
+            padding: 20px;
+            margin: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        form input, form select {
+            display: block;
+            width: 80%;
+            margin: 10px auto;
+            padding: 10px;
+            border: 1px solid #d5d5d5;
+            border-radius: 5px;
+        }
+        form button {
+            display: block;
+            width: 40%;
+            margin: 10px auto;
+            padding: 10px;
+            border: 1px solid #d5d5d5;
+            border-radius: 5px;
+        }
+        form button[type="submit"] {
+            background-color: #6c3483;
+            color: #fff;
+            border: none;
+            cursor: pointer;
+        }
+        form button[type="submit"]:hover {
+            background-color: #af7ac5;
+        }
+        .result-card {
+            background-color: #d2b4de;
+            padding: 20px;
+            margin: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        .result-card button {
+            background-color: #6c3483;
+            color: #fff;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .result-card button:hover {
+            background-color: #af7ac5;
+        }
+
+    </style>
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1>Генератор библиографических ссылок</h1>
-            <nav>
-                <a href="/form/printed" class="nav-link">Печатный источник</a> |
-                <a href="/form/electronic" class="nav-link">Электронный источник</a>
-            </nav>
-        </header>
+    <header>
+        <h1>Выберете источник:</h1>
+        <button onclick="showSection('electronic')">Электронный ресурс</button>
+        <button onclick="showSection('printed')">Печатное издание</button>
+    </header>
 
-<main>
-    {% if fields %}
-    <form method="POST" action="{{ url_for('submit') }}" class="form-card">
-        <input type="hidden" name="form_type" value="{{ form_type }}">
+    <!-- Электронный ресурс -->
+    <div id="electronic" class="hidden" >
+        <h2>Электронный ресурс</h2>
+        <label for="electronic_type">Тип ресурса:</label>
+        <select id="electronic_type" onchange="switchElectronicType()">
+            <option value="" disabled selected>Выберите</option>
+            <option value="journal">Журнал</option>
+            <option value="web">Веб-сайт</option>
+        </select>
 
-        <!-- Блок для авторов -->
-        <div class="form-group">
-            <label>Авторы:</label>
-            <div id="authors-container">
-                <div class="author-group">
+        <form id="journal" class="hidden" method="POST" action="{{ url_for('submit') }}">
+            <input type="hidden" name="form_type" value="journal">
+            <h3>Журнал</h3>
+            <div id="journal-authors">
+                <label>Авторы:</label>
+                <div class="author">
                     <input type="text" name="authors_surname[]" placeholder="Фамилия" required>
                     <input type="text" name="authors_name[]" placeholder="Имя" required>
                     <input type="text" name="authors_patronymic[]" placeholder="Отчество">
                 </div>
             </div>
-            <button type="button" onclick="addAuthor()" class="btn btn-small">+</button>
-        </div>
+            <button type="button" onclick="addAuthor('journal-authors')" class="plus">Добавить автора</button>
+            <input type="text" name="title" placeholder="Название статьи">
+            <input type="text" name="journal" placeholder="Название журнала" required>
+            <input type="number" name="publication_year" placeholder="Год издания" required>
+            <input type="date" name="publication_date" placeholder="Дата публикации" required>
+            <input type="url" name="url" placeholder="URL" required>
+            <button type="submit">Отправить</button>
+        </form>
 
-        <!-- Остальные поля формы -->
-        {% for field in fields %}
-            {% if field.name != 'authors' %}
-            <div class="form-group">
-                <label>{{ field.label }}</label>
-                <input type="{{ field.type if field.type else 'text' }}" name="{{ field.name }}"
-                       {% if field.required %} required {% endif %}
-                       {% if field.name == 'access_date' %} value="{{ access_date }}" {% endif %}>
+        <form id="web" class="hidden" method="POST" action="{{ url_for('submit') }}">
+            <input type="hidden" name="form_type" value="web">
+            <h3>Веб-сайт</h3>
+            <input type="text" name="site_name" placeholder="Название сайта" required>
+            <input type="text" name="title" placeholder="Название статьи на сайте">
+            <input type="url" name="url" placeholder="URL" required>
+            <input type="date" name="access_date" placeholder="Дата доступа" required>
+            <button type="submit">Отправить</button>
+        </form>
+    </div>
+
+    <!-- Печать -->
+    <div id="printed" class="hidden">
+        <h2>Печатный ресурс</h2>
+        <form method="POST" action="{{ url_for('submit') }}">
+            <input type="hidden" name="form_type" value="printed">
+            <div id="printed-authors">
+                <label>Авторы:</label>
+                <div class="author">
+                    <input type="text" name="authors_surname[]" placeholder="Фамилия" required>
+                    <input type="text" name="authors_name[]" placeholder="Имя" required>
+                    <input type="text" name="authors_patronymic[]" placeholder="Отчество">
+                </div>
             </div>
-            {% endif %}
-        {% endfor %}
-
-        <button type="submit" class="btn">Сгенерировать ссылку</button>
-    </form>
-    {% else %}
-    <p class="info-message">Выберите форму для заполнения.</p>
-    {% endif %}
-
-    {% if reference %}
+            <button type="button" onclick="addAuthor('printed-authors')">Добавить автора</button>
+            <input type="text" name="title" placeholder="Название" required>
+            <input type="text" name="publisher" placeholder="Издатель" required>
+            <input type="number" name="year" placeholder="Год издания" required>
+            <button type="submit">Отправить</button>
+        </form>
+    </div>
+        {% if reference %}
     <div class="result-card">
         <h3>Сгенерированная ссылка:</h3>
         <p id="reference-output">{{ reference }}</p>
         <button onclick="copyToClipboard()" class="btn btn-copy">Скопировать</button>
     </div>
     {% endif %}
-</main>
+    <script>
 
-<script>
-        document.addEventListener("DOMContentLoaded", function() {
-            const dateInput = document.querySelector('input[name="access_date"]');
-            if (dateInput) {
-                const today = new Date();
-                const dd = String(today.getDate()).padStart(2, '0'); // День
-                const mm = String(today.getMonth() + 1).padStart(2, '0'); // Месяц (январь - 0)
-                const yyyy = today.getFullYear(); // Год
-
-                // Устанавливаем значение в формате YYYY-MM-DD
-                dateInput.value = `${yyyy}-${mm}-${dd}`;
+        // Определение текущей секции на основе URL
+        function getUrlParameter(name) {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get(name);
+        }
+        const currentSection = getUrlParameter('current_section');
+        if (currentSection) {
+            if (currentSection === 'journal' || currentSection === 'web') {
+                setSection('electronic');
+                document.getElementById('electronic_type').value = currentSection;
+                switchElectronicType();
+            } else {
+                setSection(currentSection);
             }
-        });
-    function addAuthor() {
-        const container = document.getElementById('authors-container');
-        const newAuthorGroup = document.createElement('div');
-        newAuthorGroup.className = 'author-group';
-        newAuthorGroup.innerHTML = `
-            <input type="text" name="authors_surname[]" placeholder="Фамилия" required>
-            <input type="text" name="authors_name[]" placeholder="Имя" required>
-            <input type="text" name="authors_patronymic[]" placeholder="Отчество">
-        `;
-        container.appendChild(newAuthorGroup);
-    }
-</script>
+        }
 
+        function showSection(section) {
+            document.getElementById('electronic').classList.add('hidden');
+            document.getElementById('printed').classList.add('hidden');
+            document.getElementById(section).classList.remove('hidden');
+        }
 
-    </div>
+        function switchElectronicType() {
+            const type = document.getElementById('electronic_type').value;
+            document.getElementById('journal').classList.add('hidden');
+            document.getElementById('web').classList.add('hidden');
+            document.getElementById(type).classList.remove('hidden');
+
+            if (type == 'web') {
+                const dateInput = document.querySelector('input[name="access_date"]');
+                if (dateInput) {
+                    const today = new Date();
+                    const dd = String(today.getDate()).padStart(2, '0'); // День
+                    const mm = String(today.getMonth() + 1).padStart(2, '0'); // Месяц (январь - 0)
+                    const yyyy = today.getFullYear(); // Год
+
+                    // Устанавливаем значение в формате YYYY-MM-DD
+                    dateInput.value = `${yyyy}-${mm}-${dd}`;
+                }
+            }
+        }
+
+        function addAuthor(authorsContainerId) {
+            const container = document.getElementById(authorsContainerId);
+            const authorDiv = document.createElement('div');
+            authorDiv.classList.add('author');
+            authorDiv.innerHTML = `
+                <input type="text" name="authors_surname[]" placeholder="Фамилия" required>
+                <input type="text" name="authors_name[]" placeholder="Имя" required>
+                <input type="text" name="authors_patronymic[]" placeholder="Отчество">
+            `;
+            container.appendChild(authorDiv);
+        }
+
+        function copyToClipboard() {
+            const referenceOutput = document.getElementById('reference-output');
+            const textToCopy = referenceOutput.textContent;
+
+            // Создаем временный элемент для копирования текста
+            const tempInput = document.createElement('input');
+            tempInput.value = textToCopy;
+            document.body.appendChild(tempInput);
+
+            // Выделяем текст
+            tempInput.select();
+            tempInput.setSelectionRange(0, 99999); // Для мобильных устройств
+
+            // Копируем текст в буфер обмена
+            try {
+                document.execCommand('copy');
+                alert('Ссылка скопирована в буфер обмена!');
+            } catch (err) {
+                console.error('Не удалось скопировать текст: ', err);
+                alert('Ошибка при копировании ссылки.');
+            }
+
+            // Удаляем временный элемент
+            document.body.removeChild(tempInput);
+        }
+    </script>
 </body>
 </html>
